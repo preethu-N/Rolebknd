@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 const Team3 = () => {
   const navigate = useNavigate()
@@ -7,22 +8,50 @@ const Team3 = () => {
   const [task, setTask] = useState("")
   const [tasks, setTasks] = useState([])
 
-  const handleAddTask = (e) => {
+  useEffect(() => {
+    fetchTasks()
+  }, [])
+
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/tasks/")
+      if (Array.isArray(res.data)) {
+        const filtered = res.data.filter(t => t.assignedTo === "Team 3")
+        setTasks(filtered)
+      }
+    } catch (err) {
+      console.warn("Failed to fetch tasks from server:", err)
+    }
+  }
+
+  const handleAddTask = async (e) => {
     e.preventDefault()
 
     if (task.trim() === "") return
 
-    const newTask = {
-      id: Date.now(),
-      text: task
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/api/tasks/", {
+        task: task,
+        assignedTo: "Team 3"
+      })
+      if (res.data) {
+        setTasks([...tasks, res.data])
+        setTask("")
+      }
+    } catch (err) {
+      console.error("Failed to add task to server:", err)
+      alert("Failed to add task")
     }
-
-    setTasks([...tasks, newTask])
-    setTask("")
   }
 
-  const handleDelete = (id) => {
-    setTasks(tasks.filter(t => t.id !== id))
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/tasks/${id}/`)
+      setTasks(tasks.filter(t => t.id !== id))
+    } catch (err) {
+      console.error("Failed to delete task from server:", err)
+      alert("Failed to delete task")
+    }
   }
 
   const handleLogout = () => {
@@ -86,7 +115,7 @@ const Team3 = () => {
               key={t.id}
               className="flex justify-between items-center bg-white/10 p-2 rounded-lg"
             >
-              <span>{t.text}</span>
+              <span>{t.task}</span>
 
               <button
                 onClick={() => handleDelete(t.id)}

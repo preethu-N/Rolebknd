@@ -29,25 +29,31 @@ const MemberLogin = () => {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const user = users.find(
-      (u) =>
-        u.username === form.username &&
-        u.password === form.password
-    )
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/member-login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams(form)
+      })
 
-    if (!user) {
-      alert("Invalid credentials")
-      return
+      const data = await res.json()
+
+      if (data.status === "success") {
+        localStorage.setItem("role", data.role)
+        navigate(`/${data.role}`)
+      } else {
+        alert("Invalid credentials")
+      }
+
+    } catch (error) {
+      console.error("Login error:", error)
+      alert("Server error")
     }
-
-    // save role secretly
-    localStorage.setItem("role", user.role)
-
-    // redirect based on role
-    navigate(`/${user.role}`)
   }
 
   return (
